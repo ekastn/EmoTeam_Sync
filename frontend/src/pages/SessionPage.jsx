@@ -2,10 +2,11 @@ import React, { useEffect, useState } from "react";
 import WebcamEmotion from "../components/WebcamEmotion";
 import ToastNotification from "../components/ToastNotification";
 
-const SessionPage = ({ sessionId, teamId, isLeader }) => {
+const SessionPage = ({ sessionId, isLeader }) => {
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [lastNegative, setLastNegative] = useState(null);
+  const user = JSON.parse(localStorage.getItem("user"));
 
   // Handler emosi dari WebcamEmotion
   const handleDetect = ({ emotion }) => {
@@ -40,6 +41,8 @@ const SessionPage = ({ sessionId, teamId, isLeader }) => {
       <WebcamEmotion
         onDetect={isLeader ? handleDetect : undefined}
         isActive={true}
+        sessionId={sessionId}
+        userId={user?.id}
       />
       {/* ...konten sesi lain... */}
     </div>

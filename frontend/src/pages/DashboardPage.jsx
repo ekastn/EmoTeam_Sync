@@ -1,66 +1,105 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Legend, PieChart, Pie, Cell
-} from 'recharts';
+import React, { useState, useEffect } from "react";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 
-// Data dummy untuk grafik
-const emotionData = [
-  { name: 'Senin', senang: 12, netral: 8, sedih: 3, marah: 1 },
-  { name: 'Selasa', senang: 15, netral: 5, sedih: 2, marah: 0 },
-  { name: 'Rabu', senang: 10, netral: 10, sedih: 5, marah: 2 },
-  { name: 'Kamis', senang: 14, netral: 7, sedih: 3, marah: 1 },
-  { name: 'Jumat', senang: 16, netral: 6, sedih: 1, marah: 0 },
-];
-
-const productivityData = [
-  { name: 'Senin', produktivitas: 75 },
-  { name: 'Selasa', produktivitas: 85 },
-  { name: 'Rabu', produktivitas: 65 },
-  { name: 'Kamis', produktivitas: 80 },
-  { name: 'Jumat', produktivitas: 90 },
-];
-
-const teamMembers = [
-  { id: 1, name: 'Andi', role: 'Frontend Dev', mood: '😊', productivity: 85, lastActive: '5 menit lalu' },
-  { id: 2, name: 'Budi', role: 'Backend Dev', mood: '😐', productivity: 75, lastActive: '10 menit lalu' },
-  { id: 3, name: 'Citra', role: 'UI/UX', mood: '😊', productivity: 90, lastActive: 'Baru saja' },
-  { id: 4, name: 'Dewi', role: 'QA', mood: '😊', productivity: 80, lastActive: '15 menit lalu' },
-  { id: 5, name: 'Eko', role: 'DevOps', mood: '😔', productivity: 60, lastActive: '30 menit lalu' },
-];
-
-const COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444'];
+const COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#EF4444"];
 
 const DashboardPage = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [activeSessions, setActiveSessions] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [dashboardData, setDashboardData] = useState(null);
+
+  // Fetch dashboard data from API
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+      const response = await fetch(
+        `http://localhost:5000/api/dashboard/stats?user_id=${user.id}`
+      );
+      const result = await response.json();
+
+      if (result.success) {
+        setDashboardData(result.data);
+      } else {
+        setError(result.message || "Gagal memuat data dashboard");
+      }
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      setError("Terjadi kesalahan saat memuat data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Update waktu setiap detik
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    
-    // Simulasi sesi aktif (random antara 8-15)
-    setActiveSessions(Math.floor(Math.random() * 8) + 8);
-    
-    return () => clearInterval(timer);
+
+    // Fetch data saat component mount
+    fetchDashboardData();
+
+    // Auto refresh setiap 30 detik
+    const refreshTimer = setInterval(fetchDashboardData, 30000);
+
+    return () => {
+      clearInterval(timer);
+      clearInterval(refreshTimer);
+    };
   }, []);
 
-  // Hitung statistik
-  const avgMood = teamMembers.reduce((acc, member) => {
-    const moodValue = member.mood === '😊' ? 100 : member.mood === '😐' ? 60 : 30;
-    return acc + moodValue;
-  }, 0) / teamMembers.length;
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Memuat data dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const avgProductivity = teamMembers.reduce((acc, member) => acc + member.productivity, 0) / teamMembers.length;
-  const happyMembers = teamMembers.filter(member => member.mood === '😊').length;
-  const neutralMembers = teamMembers.filter(member => member.mood === '😐').length;
-  const sadMembers = teamMembers.filter(member => member.mood === '😔').length;
+  if (error) {
+    return (
+      <div className="p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-red-800 font-medium">Error</h2>
+          <p className="text-red-600 mt-1">{error}</p>
+          <button
+            onClick={fetchDashboardData}
+            className="mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  const moodData = [
-    { name: 'Senang', value: happyMembers },
-    { name: 'Netral', value: neutralMembers },
-    { name: 'Sedih', value: sadMembers },
-  ];
+  if (!dashboardData) {
+    return (
+      <div className="p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <p className="text-yellow-800">Tidak ada data tersedia</p>
+        </div>
+      </div>
+    );
+  }
+
+  const { stats, emotion_trend, team_members, mood_distribution } =
+    dashboardData;
 
   return (
     <div className="p-6 space-y-6">
@@ -69,13 +108,21 @@ const DashboardPage = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Dashboard Tim</h1>
           <p className="text-gray-500">
-            {currentTime.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            {' • '}
-            {currentTime.toLocaleTimeString('id-ID')}
+            {currentTime.toLocaleDateString("id-ID", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+            {" • "}
+            {currentTime.toLocaleTimeString("id-ID")}
           </p>
         </div>
         <div className="mt-4 md:mt-0">
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          <button
+            onClick={fetchDashboardData}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+          >
             Refresh Data
           </button>
         </div>
@@ -83,54 +130,98 @@ const DashboardPage = () => {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Anggota Tim" 
-          value={teamMembers.length} 
-          change="+2 dari minggu lalu" 
+        <StatCard
+          title="Tim Saya"
+          value={stats.total_teams}
+          change={`${stats.total_members} total anggota`}
           icon="👥"
           color="blue"
         />
-        <StatCard 
-          title="Rata-rata Mood" 
-          value={`${Math.round(avgMood)}%`} 
-          change="+5% dari kemarin"
-          icon={avgMood > 70 ? '😊' : avgMood > 40 ? '😐' : '😔'}
-          color={avgMood > 70 ? 'green' : avgMood > 40 ? 'yellow' : 'red'}
+        <StatCard
+          title="Rata-rata Mood"
+          value={`${stats.avg_mood}%`}
+          change={
+            stats.avg_mood > 70
+              ? "Mood tim baik"
+              : stats.avg_mood > 40
+              ? "Mood tim biasa"
+              : "Perlu perhatian"
+          }
+          icon={stats.avg_mood > 70 ? "😊" : stats.avg_mood > 40 ? "😐" : "😔"}
+          color={
+            stats.avg_mood > 70
+              ? "green"
+              : stats.avg_mood > 40
+              ? "yellow"
+              : "red"
+          }
         />
-        <StatCard 
-          title="Sesi Aktif" 
-          value={activeSessions} 
-          change={`${activeSessions > 10 ? 'Tinggi' : 'Rendah'} dari rata-rata`}
+        <StatCard
+          title="Sesi Aktif"
+          value={stats.active_sessions}
+          change={`${
+            stats.active_sessions > 0
+              ? "Ada sesi berjalan"
+              : "Tidak ada sesi aktif"
+          }`}
           icon="🔄"
           color="purple"
         />
-        <StatCard 
-          title="Produktivitas" 
-          value={`${Math.round(avgProductivity)}%`} 
-          change="+3% dari kemarin"
+        <StatCard
+          title="Produktivitas"
+          value={`${stats.avg_productivity}%`}
+          change={
+            stats.avg_productivity > 75
+              ? "Produktivitas tinggi"
+              : "Bisa ditingkatkan"
+          }
           icon="📈"
-          color={avgProductivity > 75 ? 'green' : 'yellow'}
+          color={stats.avg_productivity > 75 ? "green" : "yellow"}
         />
       </div>
 
       {/* Grafik Tren Emosi */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow lg:col-span-2">
-          <h2 className="text-lg font-semibold mb-4">Tren Emosi Harian</h2>
+          <h2 className="text-lg font-semibold mb-4">Tren Emosi Mingguan</h2>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
-                data={emotionData}
+                data={emotion_trend}
                 margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" />
                 <YAxis />
                 <Tooltip />
-                <Area type="monotone" dataKey="senang" stackId="1" stroke="#10B981" fill="#D1FAE5" />
-                <Area type="monotone" dataKey="netral" stackId="1" stroke="#3B82F6" fill="#DBEAFE" />
-                <Area type="monotone" dataKey="sedih" stackId="1" stroke="#F59E0B" fill="#FEF3C7" />
-                <Area type="monotone" dataKey="marah" stackId="1" stroke="#EF4444" fill="#FEE2E2" />
+                <Area
+                  type="monotone"
+                  dataKey="senang"
+                  stackId="1"
+                  stroke="#10B981"
+                  fill="#D1FAE5"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="netral"
+                  stackId="1"
+                  stroke="#3B82F6"
+                  fill="#DBEAFE"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="sedih"
+                  stackId="1"
+                  stroke="#F59E0B"
+                  fill="#FEF3C7"
+                />
+                <Area
+                  type="monotone"
+                  dataKey="marah"
+                  stackId="1"
+                  stroke="#EF4444"
+                  fill="#FEE2E2"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -139,39 +230,63 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">Distribusi Mood</h2>
           <div className="h-80 flex flex-col items-center justify-center">
-            <div className="h-48 w-48 mb-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={moodData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  >
-                    {moodData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap justify-center gap-4 mt-2">
-              {moodData.map((item, index) => (
-                <div key={item.name} className="flex items-center">
-                  <div 
-                    className="w-3 h-3 rounded-full mr-2" 
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                  <span className="text-sm text-gray-600">{item.name}: {item.value} orang</span>
+            {mood_distribution.reduce((sum, item) => sum + item.value, 0) >
+            0 ? (
+              <>
+                <div className="h-48 w-48 mb-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={mood_distribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, percent }) =>
+                          `${name} ${(percent * 100).toFixed(0)}%`
+                        }
+                      >
+                        {mood_distribution.map((entry, index) => (
+                          <Cell
+                            key={`mood-cell-${index}`}
+                            fill={COLORS[index % COLORS.length]}
+                          />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
                 </div>
-              ))}
-            </div>
+                <div className="flex flex-wrap justify-center gap-4 mt-2">
+                  {mood_distribution.map((item, index) => (
+                    <div
+                      key={`mood-legend-${item.name}-${index}`}
+                      className="flex items-center"
+                    >
+                      <div
+                        className="w-3 h-3 rounded-full mr-2"
+                        style={{
+                          backgroundColor: COLORS[index % COLORS.length],
+                        }}
+                      />
+                      <span className="text-sm text-gray-600">
+                        {item.name}: {item.value} orang
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <div className="text-center text-gray-500">
+                <p>Belum ada data mood tersedia</p>
+                <p className="text-sm mt-2">
+                  Mulai sesi untuk melihat data mood tim
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -181,63 +296,57 @@ const DashboardPage = () => {
         <div className="bg-white p-6 rounded-xl shadow">
           <h2 className="text-lg font-semibold mb-4">Aktivitas Anggota</h2>
           <div className="space-y-4">
-            {teamMembers.map((member) => (
-              <div key={member.id} className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl mr-4">
-                  {member.mood}
-                </div>
-                <div className="flex-1">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium">{member.name}</h3>
-                    <span className="text-sm text-gray-500">{member.lastActive}</span>
+            {team_members && team_members.length > 0 ? (
+              team_members.map((member, index) => (
+                <div
+                  key={`team-member-${member.id}-${index}`}
+                  className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl mr-4">
+                    {member.mood}
                   </div>
-                  <p className="text-sm text-gray-500">{member.role}</p>
-                </div>
-                <div className="ml-4">
-                  <div className="w-24 bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full ${
-                        member.productivity > 80 ? 'bg-green-500' : 
-                        member.productivity > 60 ? 'bg-blue-500' : 'bg-yellow-500'
-                      }`}
-                      style={{ width: `${member.productivity}%` }}
-                    />
+                  <div className="flex-1">
+                    <div className="flex justify-between items-center">
+                      <h3 className="font-medium">{member.name}</h3>
+                      <span
+                        className={`text-sm px-2 py-1 rounded-full ${
+                          member.is_online
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {member.is_online ? "Online" : "Offline"}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500">{member.team}</p>
                   </div>
-                  <span className="text-xs text-gray-500">{member.productivity}%</span>
+                  <div className="ml-4">
+                    <div className="w-24 bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full ${
+                          member.productivity > 80
+                            ? "bg-green-500"
+                            : member.productivity > 60
+                            ? "bg-blue-500"
+                            : "bg-yellow-500"
+                        }`}
+                        style={{ width: `${member.productivity}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {member.productivity}%
+                    </span>
+                  </div>
                 </div>
+              ))
+            ) : (
+              <div className="text-center text-gray-500 py-8">
+                <p>Belum ada anggota tim</p>
+                <p className="text-sm mt-2">
+                  Buat atau bergabung dengan tim untuk melihat aktivitas anggota
+                </p>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Tren Produktivitas</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={productivityData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" />
-                <YAxis domain={[0, 100]} />
-                <Tooltip />
-                <Bar dataKey="produktivitas" fill="#3B82F6" radius={[4, 4, 0, 0]}> 
-                  {productivityData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={
-                        entry.produktivitas > 80 ? '#10B981' : 
-                        entry.produktivitas > 60 ? '#3B82F6' : '#F59E0B'
-                      } 
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="mt-4 p-4 bg-blue-50 rounded-lg">
-            <h3 className="font-medium text-blue-800">Analisis Produktivitas</h3>
-            <p className="text-sm text-blue-700 mt-1">
-              Produktivitas tim cenderung meningkat di akhir pekan. Hari Jumat menunjukkan produktivitas tertinggi minggu ini.
-            </p>
+            )}
           </div>
         </div>
       </div>
@@ -248,11 +357,11 @@ const DashboardPage = () => {
 // Komponen Stat Card
 const StatCard = ({ title, value, change, icon, color }) => {
   const colorClasses = {
-    blue: 'bg-blue-100 text-blue-600',
-    green: 'bg-green-100 text-green-600',
-    red: 'bg-red-100 text-red-600',
-    yellow: 'bg-yellow-100 text-yellow-600',
-    purple: 'bg-purple-100 text-purple-600',
+    blue: "bg-blue-100 text-blue-600",
+    green: "bg-green-100 text-green-600",
+    red: "bg-red-100 text-red-600",
+    yellow: "bg-yellow-100 text-yellow-600",
+    purple: "bg-purple-100 text-purple-600",
   };
 
   return (

@@ -127,6 +127,275 @@ def api_dashboard():
         return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
     return jsonify({'success': True, 'user': {'id': user.id, 'nama': user.nama, 'email': user.email, 'role': user.role}})
 
+@app.route('/api/dashboard/stats', methods=['GET'])
+def api_dashboard_stats():
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'User ID diperlukan'}), 400
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
+        
+        # Ambil tim-tim user
+        user_teams = db.session.query(Team).join(TeamMember).filter(TeamMember.user_id == user_id).all()
+        team_ids = [team.id for team in user_teams]
+        
+        # Statistik dasar
+        total_teams = len(user_teams)
+        total_members = db.session.query(TeamMember).filter(TeamMember.team_id.in_(team_ids)).count() if team_ids else 0
+        
+        # Sesi aktif
+        active_sessions = db.session.query(Session).filter(
+            Session.team_id.in_(team_ids),
+            Session.status == 'active'
+        ).count() if team_ids else 0
+        
+        # Data emosi 7 hari terakhir
+        from datetime import datetime, timedelta
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=7)
+        
+        emotion_stats = []
+        for i in range(7):
+            date = start_date + timedelta(days=i)
+            day_name = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][date.weekday()]
+            
+            # Count emotions for this day
+            day_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            
+            emotions = db.session.query(EmotionData).join(Session).filter(
+                Session.team_id.in_(team_ids),
+                EmotionData.timestamp >= day_start,
+                EmotionData.timestamp < day_end
+            ).all() if team_ids else []
+            
+            happy_count = sum(1 for e in emotions if e.emotion in ['happy', 'surprise'])
+            neutral_count = sum(1 for e in emotions if e.emotion == 'neutral')
+            sad_count = sum(1 for e in emotions if e.emotion in ['sad', 'fear'])
+            angry_count = sum(1 for e in emotions if e.emotion in ['angry', 'disgust'])
+            
+            emotion_stats.append({
+                'name': day_name,
+                'senang': happy_count,
+                'netral': neutral_count,
+                'sedih': sad_count,
+                'marah': angry_count
+            })
+        
+        # Team members dengan status terbaru
+        team_members_data = []
+        if team_ids:
+            members = db.session.query(User, TeamMember, Team).join(
+                TeamMember, User.id == TeamMember.user_id
+            ).join(
+                Team, TeamMember.team_id == Team.id
+            ).filter(TeamMember.team_id.in_(team_ids)).all()
+            
+            for user_obj, member_obj, team_obj in members:
+                # Ambil emosi terbaru untuk member ini
+                latest_emotion = db.session.query(EmotionData).join(Session).filter(
+                    Session.team_id.in_(team_ids),
+                    EmotionData.user_id == user_obj.id
+                ).order_by(EmotionData.timestamp.desc()).first()
+                
+                mood_emoji = '😊'
+                if latest_emotion:
+                    if latest_emotion.emotion in ['happy', 'surprise']:
+                        mood_emoji = '😊'
+                    elif latest_emotion.emotion == 'neutral':
+                        mood_emoji = '😐'
+                    elif latest_emotion.emotion in ['sad', 'fear']:
+                        mood_emoji = '😔'
+                    elif latest_emotion.emotion in ['angry', 'disgust']:
+                        mood_emoji = '😠'
+                
+                # Enhanced productivity calculation for individual members
+                # 1. Recent participation in sessions (last 7 days)
+                recent_sessions_participation = db.session.query(EmotionData.session_id).filter(
+                    EmotionData.user_id == user_obj.id,
+                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
+                ).distinct().count()
+                
+                # 2. Total emotion data points (activity level)
+                recent_activity = db.session.query(EmotionData).filter(
+                    EmotionData.user_id == user_obj.id,
+                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
+                ).count()
+                
+                # 3. Positive emotion ratio
+                recent_emotions = db.session.query(EmotionData).filter(
+                    EmotionData.user_id == user_obj.id,
+                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
+                ).all()
+                
+                positive_count = sum(1 for e in recent_emotions if e.emotion in ['happy', 'surprise'])
+                total_count = len(recent_emotions)
+                positive_ratio = (positive_count / total_count) if total_count > 0 else 0.5
+                
+                # 4. Session consistency (how many days they participated)
+                days_active = db.session.query(
+                    db.func.date(EmotionData.timestamp)
+                ).filter(
+                    EmotionData.user_id == user_obj.id,
+                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
+                ).distinct().count()
+                
+                # Enhanced productivity formula for individuals
+                # Session participation (30%), Activity level (25%), Positive mood (25%), Consistency (20%)
+                session_score = min(100, (recent_sessions_participation / 3) * 100)  # 3 sessions = 100%
+                activity_score = min(100, (recent_activity / 100) * 100)  # 100 data points = 100%
+                mood_score = positive_ratio * 100
+                consistency_score = (days_active / 7) * 100  # 7 days = 100%
+                
+                productivity = (
+                    session_score * 0.3 +
+                    activity_score * 0.25 +
+                    mood_score * 0.25 +
+                    consistency_score * 0.2
+                )
+                
+                productivity = max(20, min(100, productivity))  # Ensure 20-100 range
+                
+                team_members_data.append({
+                    'id': user_obj.id,
+                    'name': user_obj.nama,
+                    'role': member_obj.status,
+                    'team': team_obj.name,
+                    'mood': mood_emoji,
+                    'productivity': productivity,
+                    'lastActive': member_obj.status,
+                    'is_online': member_obj.status in ['online', 'active']
+                })
+        
+        # Hitung rata-rata mood
+        total_mood_score = 0
+        mood_count = 0
+        happy_members = 0
+        neutral_members = 0
+        sad_members = 0
+        
+        for member in team_members_data:
+            if member['mood'] == '😊':
+                total_mood_score += 100
+                happy_members += 1
+            elif member['mood'] == '😐':
+                total_mood_score += 60
+                neutral_members += 1
+            else:
+                total_mood_score += 30
+                sad_members += 1
+            mood_count += 1
+        
+        avg_mood = (total_mood_score / mood_count) if mood_count > 0 else 0
+        avg_productivity = sum(member['productivity'] for member in team_members_data) / len(team_members_data) if team_members_data else 0
+        
+        # Mood distribution data
+        mood_distribution = [
+            {'name': 'Senang', 'value': happy_members},
+            {'name': 'Netral', 'value': neutral_members},
+            {'name': 'Sedih', 'value': sad_members}
+        ]
+        
+        # Enhanced Productivity calculation
+        productivity_data = []
+        for i in range(7):
+            date = start_date + timedelta(days=i)
+            day_name = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][date.weekday()]
+            
+            day_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
+            day_end = day_start + timedelta(days=1)
+            
+            # 1. Durasi sesi aktif dalam hari
+            daily_sessions = db.session.query(Session).filter(
+                Session.team_id.in_(team_ids),
+                Session.start_time >= day_start,
+                Session.start_time < day_end
+            ).all() if team_ids else []
+            
+            total_session_duration = 0
+            for session in daily_sessions:
+                if session.end_time:
+                    duration = (session.end_time - session.start_time).total_seconds() / 3600  # in hours
+                    total_session_duration += duration
+                elif session.status == 'active':
+                    # Sesi masih aktif, hitung dari start sampai sekarang
+                    duration = (datetime.now() - session.start_time).total_seconds() / 3600
+                    total_session_duration += min(duration, 8)  # Cap at 8 hours per day
+            
+            # 2. Jumlah unique participants
+            daily_participants = db.session.query(EmotionData.user_id).join(Session).filter(
+                Session.team_id.in_(team_ids),
+                EmotionData.timestamp >= day_start,
+                EmotionData.timestamp < day_end
+            ).distinct().count() if team_ids else 0
+            
+            # 3. Mood positivity ratio
+            daily_emotions = db.session.query(EmotionData).join(Session).filter(
+                Session.team_id.in_(team_ids),
+                EmotionData.timestamp >= day_start,
+                EmotionData.timestamp < day_end
+            ).all() if team_ids else []
+            
+            positive_emotions = sum(1 for e in daily_emotions if e.emotion in ['happy', 'surprise'])
+            total_emotions = len(daily_emotions)
+            mood_ratio = (positive_emotions / total_emotions * 100) if total_emotions > 0 else 50
+            
+            # 4. Participation consistency (how many members participated vs total members)
+            total_team_members = len(team_members_data) if team_members_data else 1
+            participation_rate = (daily_participants / total_team_members * 100) if total_team_members > 0 else 0
+            
+            # Enhanced productivity formula
+            # Factors: Session Duration (40%), Participation Rate (30%), Mood Positivity (20%), Activity Level (10%)
+            duration_score = min(100, (total_session_duration / 4) * 100)  # 4 hours = 100%
+            participation_score = min(100, participation_rate)
+            mood_score = min(100, mood_ratio)
+            activity_score = min(100, (total_emotions / 50) * 100)  # 50 emotions = 100%
+            
+            productivity = (
+                duration_score * 0.4 +
+                participation_score * 0.3 +
+                mood_score * 0.2 +
+                activity_score * 0.1
+            )
+            
+            productivity = max(0, min(100, productivity))  # Ensure 0-100 range
+            
+            productivity_data.append({
+                'name': day_name,
+                'produktivitas': round(productivity),
+                'details': {
+                    'session_duration': round(total_session_duration, 1),
+                    'participants': daily_participants,
+                    'positive_mood_ratio': round(mood_ratio, 1),
+                    'total_emotions': total_emotions,
+                    'sessions_count': len(daily_sessions)
+                }
+            })
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'stats': {
+                    'total_teams': total_teams,
+                    'total_members': total_members,
+                    'active_sessions': active_sessions,
+                    'avg_mood': round(avg_mood),
+                    'avg_productivity': round(avg_productivity)
+                },
+                'emotion_trend': emotion_stats,
+                'team_members': team_members_data,
+                'mood_distribution': mood_distribution,
+                'productivity_trend': productivity_data
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error in dashboard stats: {str(e)}")
+        return jsonify({'success': False, 'message': 'Terjadi kesalahan server'}), 500
+
 @app.route('/api/teams', methods=['POST'])
 def create_team():
     data = request.get_json()
@@ -867,6 +1136,294 @@ def mark_notification_read(notif_id):
     notif.is_read = True
     db.session.commit()
     return jsonify({'success': True})
+
+@app.route('/api/reports/monthly', methods=['GET'])
+def api_monthly_report():
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'message': 'User ID diperlukan'}), 400
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'success': False, 'message': 'User tidak ditemukan'}), 404
+        
+        # Ambil tim-tim user
+        user_teams = db.session.query(Team).join(TeamMember).filter(TeamMember.user_id == user_id).all()
+        team_ids = [team.id for team in user_teams]
+        
+        from datetime import datetime, timedelta
+        # Data untuk bulan ini
+        now = datetime.now()
+        start_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end_of_month = (start_of_month + timedelta(days=32)).replace(day=1) - timedelta(seconds=1)
+        
+        # Statistik bulanan
+        total_teams = len(user_teams)
+        total_members = db.session.query(TeamMember).filter(TeamMember.team_id.in_(team_ids)).count() if team_ids else 0
+        
+        # Total sesi bulan ini
+        monthly_sessions = db.session.query(Session).filter(
+            Session.team_id.in_(team_ids),
+            Session.start_time >= start_of_month,
+            Session.start_time <= end_of_month
+        ).count() if team_ids else 0
+        
+        # Data emosi bulan ini
+        monthly_emotions = db.session.query(EmotionData).join(Session).filter(
+            Session.team_id.in_(team_ids),
+            EmotionData.timestamp >= start_of_month,
+            EmotionData.timestamp <= end_of_month
+        ).all() if team_ids else []
+        
+        # Hitung distribusi emosi dengan detail timer
+        emotion_counts = {
+            'happy': 0, 'neutral': 0, 'sad': 0, 'angry': 0, 
+            'surprise': 0, 'fear': 0, 'disgust': 0
+        }
+        emotion_durations = {
+            'happy': [], 'neutral': [], 'sad': [], 'angry': [], 
+            'surprise': [], 'fear': [], 'disgust': []
+        }
+        
+        # Simulasi durasi emosi berdasarkan confidence dan timestamp
+        for emotion in monthly_emotions:
+            if emotion.emotion in emotion_counts:
+                emotion_counts[emotion.emotion] += 1
+                # Simulasi durasi berdasarkan confidence (semakin tinggi confidence, semakin lama durasi)
+                duration = emotion.confidence * 5 + 2  # 2-7 detik range
+                emotion_durations[emotion.emotion].append(duration)
+        
+        # Format distribusi emosi untuk frontend
+        emotion_distribution = []
+        emotion_mapping = {
+            'happy': 'Senang',
+            'neutral': 'Netral', 
+            'sad': 'Sedih',
+            'angry': 'Marah',
+            'surprise': 'Terkejut',
+            'fear': 'Takut',
+            'disgust': 'Jijik'
+        }
+        
+        total_emotions = sum(emotion_counts.values())
+        for emotion_key, count in emotion_counts.items():
+            if count > 0:
+                avg_duration = sum(emotion_durations[emotion_key]) / len(emotion_durations[emotion_key])
+                percentage = (count / total_emotions * 100) if total_emotions > 0 else 0
+                
+                emotion_distribution.append({
+                    'name': emotion_mapping[emotion_key],
+                    'value': count,
+                    'percentage': round(percentage, 1),
+                    'avg_duration': round(avg_duration, 1),
+                    'total_duration': round(sum(emotion_durations[emotion_key]), 1)
+                })
+        
+        # Rata-rata mood (simplified)
+        total_emotions = sum(emotion_counts.values())
+        if total_emotions > 0:
+            positive_emotions = emotion_counts['happy'] + emotion_counts['surprise']
+            negative_emotions = emotion_counts['sad'] + emotion_counts['angry'] + emotion_counts['fear'] + emotion_counts['disgust']
+            neutral_emotions = emotion_counts['neutral']
+            
+            if positive_emotions >= negative_emotions and positive_emotions >= neutral_emotions:
+                avg_mood = '😊'
+            elif neutral_emotions >= negative_emotions:
+                avg_mood = '😐'
+            else:
+                avg_mood = '😔'
+        else:
+            avg_mood = '😐'
+        
+        # Aktivitas harian untuk grafik
+        daily_mood_data = []
+        for day in range(1, 32):  # Maximum days in a month
+            try:
+                day_date = start_of_month.replace(day=day)
+                if day_date > end_of_month:
+                    break
+                    
+                day_start = day_date.replace(hour=0, minute=0, second=0, microsecond=0)
+                day_end = day_start + timedelta(days=1)
+                
+                day_emotions = db.session.query(EmotionData).join(Session).filter(
+                    Session.team_id.in_(team_ids),
+                    EmotionData.timestamp >= day_start,
+                    EmotionData.timestamp < day_end
+                ).all() if team_ids else []
+                
+                happy_count = sum(1 for e in day_emotions if e.emotion in ['happy', 'surprise'])
+                neutral_count = sum(1 for e in day_emotions if e.emotion == 'neutral')
+                sad_count = sum(1 for e in day_emotions if e.emotion in ['sad', 'fear'])
+                angry_count = sum(1 for e in day_emotions if e.emotion in ['angry', 'disgust'])
+                
+                daily_mood_data.append({
+                    'date': day_date.strftime('%Y-%m-%d'),
+                    'day': day,
+                    'senang': happy_count,
+                    'netral': neutral_count,
+                    'sedih': sad_count,
+                    'marah': angry_count,
+                    'total': len(day_emotions)
+                })
+            except ValueError:
+                # Invalid day for month (e.g., Feb 30)
+                break
+        
+        # Aktivitas terbaru
+        recent_activities = []
+        recent_sessions = db.session.query(Session, Team).join(Team).filter(
+            Session.team_id.in_(team_ids)
+        ).order_by(Session.start_time.desc()).limit(10).all() if team_ids else []
+        
+        for session, team in recent_sessions:
+            # Hitung durasi sesi
+            if session.end_time:
+                duration = session.end_time - session.start_time
+                duration_str = f"{duration.seconds // 3600}j {(duration.seconds % 3600) // 60}m"
+            else:
+                duration_str = "Sedang berlangsung"
+            
+            # Hitung jumlah partisipan
+            participants = db.session.query(EmotionData.user_id).filter(
+                EmotionData.session_id == session.id
+            ).distinct().count()
+            
+            recent_activities.append({
+                'id': session.id,
+                'title': session.title or f"Sesi {team.name}",
+                'description': f"Sesi kolaborasi tim {team.name} dengan {participants} partisipan",
+                'duration': duration_str,
+                'status': session.status,
+                'start_time': session.start_time.isoformat(),
+                'team_name': team.name
+            })
+        
+        # Tentukan emosi dominan
+        dominant_emotion = 'Netral'
+        if emotion_distribution:
+            dominant_emotion = max(emotion_distribution, key=lambda x: x['value'])['name']
+        
+        # Hitung mood score berdasarkan distribusi
+        mood_score = 50  # default
+        if total_emotions > 0:
+            positive_emotions = emotion_counts['happy'] + emotion_counts['surprise']
+            negative_emotions = emotion_counts['sad'] + emotion_counts['angry'] + emotion_counts['fear'] + emotion_counts['disgust']
+            neutral_emotions = emotion_counts['neutral']
+            
+            mood_score = ((positive_emotions * 2 + neutral_emotions) / total_emotions) * 100
+            mood_score = max(0, min(100, mood_score))  # Ensure 0-100 range
+        
+        # Generate emotion trend data (weekly data for the month)
+        emotion_trend = []
+        weeks = ['Minggu 1', 'Minggu 2', 'Minggu 3', 'Minggu 4']
+        
+        for i, week in enumerate(weeks):
+            week_start = start_of_month + timedelta(days=i*7)
+            week_end = min(week_start + timedelta(days=7), end_of_month)
+            
+            # Get emotions for this week
+            week_emotions = db.session.query(EmotionData).join(Session).filter(
+                Session.team_id.in_(team_ids),
+                EmotionData.timestamp >= week_start,
+                EmotionData.timestamp < week_end
+            ).all() if team_ids else []
+            
+            # Count emotions for this week
+            week_emotion_counts = {
+                'senang': sum(1 for e in week_emotions if e.emotion in ['happy', 'surprise']),
+                'netral': sum(1 for e in week_emotions if e.emotion == 'neutral'),
+                'sedih': sum(1 for e in week_emotions if e.emotion in ['sad', 'fear']),
+                'marah': sum(1 for e in week_emotions if e.emotion in ['angry', 'disgust'])
+            }
+            
+            emotion_trend.append({
+                'name': week,
+                **week_emotion_counts
+            })
+        
+        # Generate mood distribution (current status of team members)
+        mood_distribution = []
+        if team_ids:
+            # Get team members and their recent mood status
+            team_members = db.session.query(TeamMember, User).join(User).filter(
+                TeamMember.team_id.in_(team_ids),
+                TeamMember.status == 'active'
+            ).all()
+            
+            # Simulate mood distribution based on recent emotions
+            mood_counts = {'Senang': 0, 'Netral': 0, 'Sedih': 0, 'Marah': 0}
+            
+            for member, user in team_members:
+                # Get user's most recent emotion
+                recent_emotion = db.session.query(EmotionData).join(Session).filter(
+                    Session.team_id.in_(team_ids),
+                    EmotionData.user_id == user.id
+                ).order_by(EmotionData.timestamp.desc()).first()
+                
+                if recent_emotion:
+                    if recent_emotion.emotion in ['happy', 'surprise']:
+                        mood_counts['Senang'] += 1
+                    elif recent_emotion.emotion == 'neutral':
+                        mood_counts['Netral'] += 1
+                    elif recent_emotion.emotion in ['sad', 'fear']:
+                        mood_counts['Sedih'] += 1
+                    elif recent_emotion.emotion in ['angry', 'disgust']:
+                        mood_counts['Marah'] += 1
+                    else:
+                        mood_counts['Netral'] += 1
+                else:
+                    # Default to neutral if no recent emotion
+                    mood_counts['Netral'] += 1
+            
+            # Convert to format expected by frontend
+            for mood_name, count in mood_counts.items():
+                if count > 0:
+                    mood_distribution.append({
+                        'name': mood_name,
+                        'value': count
+                    })
+        
+        # If no mood data, provide sample data for testing
+        if not mood_distribution:
+            mood_distribution = [
+                {'name': 'Senang', 'value': 5},
+                {'name': 'Netral', 'value': 3},
+                {'name': 'Sedih', 'value': 1},
+                {'name': 'Marah', 'value': 1}
+            ]
+        
+        return jsonify({
+            'success': True,
+            'data': {
+                'summary': {
+                    'total_teams': total_teams,
+                    'total_members': total_members,
+                    'active_sessions': monthly_sessions,
+                    'avg_mood_score': round(mood_score),
+                    'dominant_emotion': dominant_emotion,
+                    'total_emotions': total_emotions,
+                    'total_detection_time': round(sum(
+                        sum(durations) for durations in emotion_durations.values()
+                    ), 1)
+                },
+                'emotion_distribution': emotion_distribution,
+                'emotion_trend': emotion_trend,
+                'mood_distribution': mood_distribution,
+                'daily_mood_chart': daily_mood_data,
+                'recent_activities': recent_activities,
+                'period': {
+                    'start': start_of_month.isoformat(),
+                    'end': end_of_month.isoformat(),
+                    'month_name': start_of_month.strftime('%B %Y')
+                }
+            }
+        })
+        
+    except Exception as e:
+        print(f"Error in monthly report: {str(e)}")
+        return jsonify({'success': False, 'message': 'Terjadi kesalahan server'}), 500
 
 if __name__ == '__main__':
     with app.app_context():
