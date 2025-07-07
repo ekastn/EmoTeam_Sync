@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 const COLORS = [
   "#0088FE",
@@ -65,7 +58,6 @@ export default function EmotionPieChart({ data = [] }) {
             ))}
           </Pie>
           <Tooltip formatter={(value, name) => [`${value}x`, name]} />
-          <Legend />
         </PieChart>
       </ResponsiveContainer>
       {dominant && dominant.value > 0 && (

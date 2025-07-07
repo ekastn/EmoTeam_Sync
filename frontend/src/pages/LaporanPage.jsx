@@ -105,6 +105,8 @@ const LaporanPage = () => {
     y += 8;
     doc.text(`Total Anggota: ${summary.total_members}`, 14, y);
     y += 8;
+    doc.text(`Total Sesi Bulan Ini: ${summary.monthly_sessions}`, 14, y);
+    y += 6;
     doc.text(`Sesi Aktif: ${summary.active_sessions}`, 14, y);
     y += 8;
     doc.text(`Rata-rata Mood: ${summary.avg_mood_score}/100`, 14, y);
@@ -320,7 +322,7 @@ const LaporanPage = () => {
           {/* Summary Cards */}
           <div className="bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-4">Ringkasan Bulan Ini</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div
                 key="summary-teams"
                 className="text-center p-4 border rounded-lg"
@@ -340,7 +342,16 @@ const LaporanPage = () => {
                 </p>
               </div>
               <div
-                key="summary-sessions"
+                key="summary-monthly-sessions"
+                className="text-center p-4 border rounded-lg"
+              >
+                <p className="text-gray-500 text-sm">Sesi Bulan Ini</p>
+                <p className="text-2xl font-bold text-indigo-600">
+                  {reportData.summary.monthly_sessions || 0}
+                </p>
+              </div>
+              <div
+                key="summary-active-sessions"
                 className="text-center p-4 border rounded-lg"
               >
                 <p className="text-gray-500 text-sm">Sesi Aktif</p>
@@ -355,6 +366,39 @@ const LaporanPage = () => {
                 <p className="text-gray-500 text-sm">Rata-rata Mood</p>
                 <p className="text-2xl font-bold text-yellow-600">
                   {reportData.summary.avg_mood_score}/100
+                </p>
+                <div className="mt-2 flex flex-col items-center">
+                  <span className="text-2xl">
+                    {reportData.summary.avg_mood_score >= 75
+                      ? "😊"
+                      : reportData.summary.avg_mood_score >= 60
+                      ? "🙂"
+                      : reportData.summary.avg_mood_score >= 40
+                      ? "😐"
+                      : reportData.summary.avg_mood_score >= 25
+                      ? "😔"
+                      : "😢"}
+                  </span>
+                  <span className="text-xs text-gray-600 mt-1">
+                    {reportData.summary.avg_mood_score >= 75
+                      ? "Sangat Baik"
+                      : reportData.summary.avg_mood_score >= 60
+                      ? "Baik"
+                      : reportData.summary.avg_mood_score >= 40
+                      ? "Netral"
+                      : reportData.summary.avg_mood_score >= 25
+                      ? "Kurang Baik"
+                      : "Buruk"}
+                  </span>
+                </div>
+              </div>
+              <div
+                key="summary-emotions"
+                className="text-center p-4 border rounded-lg"
+              >
+                <p className="text-gray-500 text-sm">Total Deteksi Emosi</p>
+                <p className="text-2xl font-bold text-pink-600">
+                  {reportData.summary.total_emotions}
                 </p>
               </div>
             </div>
@@ -381,7 +425,7 @@ const LaporanPage = () => {
             reportData.mood_distribution.length > 0 ? (
               <div className="flex flex-col lg:flex-row items-center justify-center gap-6">
                 {/* Pie Chart */}
-                <div className="h-64 w-64">
+                <div className="h-80 w-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -389,13 +433,14 @@ const LaporanPage = () => {
                         cx="50%"
                         cy="50%"
                         innerRadius={60}
-                        outerRadius={100}
+                        outerRadius={90}
                         fill="#8884d8"
                         paddingAngle={5}
                         dataKey="value"
-                        label={({ name, percent }) =>
-                          `${name} ${(percent * 100).toFixed(0)}%`
+                        label={({ percent }) =>
+                          `${(percent * 100).toFixed(0)}%`
                         }
+                        labelLine={false}
                       >
                         {reportData.mood_distribution.map((entry, index) => (
                           <Cell
@@ -404,7 +449,17 @@ const LaporanPage = () => {
                           />
                         ))}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip
+                        formatter={(value, name) => {
+                          const total = reportData.mood_distribution.reduce(
+                            (sum, mood) => sum + mood.value,
+                            0
+                          );
+                          const percentage =
+                            total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                          return [`${value} orang (${percentage}%)`, name];
+                        }}
+                      />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -414,25 +469,35 @@ const LaporanPage = () => {
                   <h3 className="font-medium text-gray-800 mb-2">
                     📊 Detail Mood:
                   </h3>
-                  {reportData.mood_distribution.map((item, index) => (
-                    <div
-                      key={`mood-legend-${item.name}-${index}`}
-                      className="flex items-center justify-between min-w-48"
-                    >
-                      <div className="flex items-center">
-                        <div
-                          className="w-4 h-4 rounded-full mr-3"
-                          style={{
-                            backgroundColor: COLORS[index % COLORS.length],
-                          }}
-                        />
-                        <span className="text-sm font-medium">{item.name}</span>
+                  {reportData.mood_distribution.map((item, index) => {
+                    const total = reportData.mood_distribution.reduce(
+                      (sum, mood) => sum + mood.value,
+                      0
+                    );
+                    const percentage =
+                      total > 0 ? ((item.value / total) * 100).toFixed(0) : 0;
+                    return (
+                      <div
+                        key={`mood-legend-${item.name}-${index}`}
+                        className="flex items-center justify-between min-w-48"
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className="w-4 h-4 rounded-full mr-3"
+                            style={{
+                              backgroundColor: COLORS[index % COLORS.length],
+                            }}
+                          />
+                          <span className="text-sm font-medium">
+                            {item.name}
+                          </span>
+                        </div>
+                        <span className="text-sm text-gray-600 font-bold">
+                          {item.value} orang ({percentage}%)
+                        </span>
                       </div>
-                      <span className="text-sm text-gray-600 font-bold">
-                        {item.value} orang
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {/* Summary Stats */}
                   <div className="mt-4 p-3 bg-gray-50 rounded-lg">

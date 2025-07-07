@@ -203,7 +203,8 @@ function DetailTimPage() {
           },
           body: JSON.stringify({
             creator_id: user.id,
-            name: `Sesi ${new Date().toLocaleString("id-ID")}`,
+            title: tim.name, // Langsung pakai nama tim
+            description: `Sesi kolaborasi tim ${tim.name}`,
           }),
         }
       );

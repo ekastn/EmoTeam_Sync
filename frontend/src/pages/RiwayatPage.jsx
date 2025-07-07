@@ -89,7 +89,7 @@ const RiwayatPage = () => {
       } else {
         alert(data.error || "Gagal menghapus sesi");
       }
-    } catch  {
+    } catch {
       alert("Gagal koneksi ke server");
     }
   };
@@ -188,13 +188,13 @@ const RiwayatPage = () => {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-[calc(100vh-12rem)]">
         {/* Riwayat Sesi */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 flex-shrink-0">
             <h2 className="text-xl font-semibold">🗓️ Riwayat Sesi</h2>
           </div>
-          <div className="p-4 max-h-96 overflow-y-auto">
+          <div className="p-4 flex-1 overflow-y-auto">
             {riwayatSesi.length === 0 ? (
               <div className="text-center py-8">
                 <div className="text-4xl mb-2">📭</div>
@@ -216,7 +216,7 @@ const RiwayatPage = () => {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-gray-800">
-                        {sesi.name || sesi.title}
+                        {sesi.team_name}
                       </h3>
                       <div className="flex items-center gap-2">
                         <span
@@ -263,9 +263,6 @@ const RiwayatPage = () => {
                       </div>
                     </div>
                     <div className="text-gray-500 text-xs">
-                      Tim: {sesi.team_name}
-                    </div>
-                    <div className="text-gray-500 text-xs">
                       Dimulai: {formatDate(sesi.started_at)}
                     </div>
                     {sesi.ended_at && (
@@ -286,8 +283,8 @@ const RiwayatPage = () => {
         </div>
 
         {/* Pie Chart Data Emosi Sesi */}
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-yellow-400 to-pink-500 text-white p-4 flex justify-between items-center">
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col">
+          <div className="bg-gradient-to-r from-yellow-400 to-pink-500 text-white p-4 flex-shrink-0 flex justify-between items-center">
             <h2 className="text-xl font-semibold">
               🧑‍💻 Diagram Emosi Selama Sesi
             </h2>
@@ -300,15 +297,13 @@ const RiwayatPage = () => {
               </button>
             )}
           </div>
-          <div className="p-4 flex flex-col items-center justify-center min-h-[350px]">
+          <div className="p-4 flex flex-col items-center justify-center flex-1 overflow-y-auto">
             {selectedSession && emotionData.length > 0 ? (
               <>
                 <EmotionPieChart data={emotionData} />
                 {/* Insight otomatis */}
                 <div className="mt-6 w-full bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                  <h3 className="font-bold text-blue-700 mb-1">
-                    Insight Otomatis
-                  </h3>
+                  <h3 className="font-bold text-blue-700 mb-1">Insight</h3>
                   {(() => {
                     // Hitung insight
                     const count = {};

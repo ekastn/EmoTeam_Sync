@@ -212,65 +212,17 @@ def api_dashboard_stats():
                     elif latest_emotion.emotion in ['angry', 'disgust']:
                         mood_emoji = '😠'
                 
-                # Enhanced productivity calculation for individual members
-                # 1. Recent participation in sessions (last 7 days)
-                recent_sessions_participation = db.session.query(EmotionData.session_id).filter(
-                    EmotionData.user_id == user_obj.id,
-                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
-                ).distinct().count()
-                
-                # 2. Total emotion data points (activity level)
-                recent_activity = db.session.query(EmotionData).filter(
-                    EmotionData.user_id == user_obj.id,
-                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
-                ).count()
-                
-                # 3. Positive emotion ratio
-                recent_emotions = db.session.query(EmotionData).filter(
-                    EmotionData.user_id == user_obj.id,
-                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
-                ).all()
-                
-                positive_count = sum(1 for e in recent_emotions if e.emotion in ['happy', 'surprise'])
-                total_count = len(recent_emotions)
-                positive_ratio = (positive_count / total_count) if total_count > 0 else 0.5
-                
-                # 4. Session consistency (how many days they participated)
-                days_active = db.session.query(
-                    db.func.date(EmotionData.timestamp)
-                ).filter(
-                    EmotionData.user_id == user_obj.id,
-                    EmotionData.timestamp >= datetime.now() - timedelta(days=7)
-                ).distinct().count()
-                
-                # Enhanced productivity formula for individuals
-                # Session participation (30%), Activity level (25%), Positive mood (25%), Consistency (20%)
-                session_score = min(100, (recent_sessions_participation / 3) * 100)  # 3 sessions = 100%
-                activity_score = min(100, (recent_activity / 100) * 100)  # 100 data points = 100%
-                mood_score = positive_ratio * 100
-                consistency_score = (days_active / 7) * 100  # 7 days = 100%
-                
-                productivity = (
-                    session_score * 0.3 +
-                    activity_score * 0.25 +
-                    mood_score * 0.25 +
-                    consistency_score * 0.2
-                )
-                
-                productivity = max(20, min(100, productivity))  # Ensure 20-100 range
-                
                 team_members_data.append({
                     'id': user_obj.id,
                     'name': user_obj.nama,
                     'role': member_obj.status,
                     'team': team_obj.name,
                     'mood': mood_emoji,
-                    'productivity': productivity,
                     'lastActive': member_obj.status,
                     'is_online': member_obj.status in ['online', 'active']
                 })
         
-        # Hitung rata-rata mood
+        # Hitung rata-rata mood dengan skala yang lebih realistis
         total_mood_score = 0
         mood_count = 0
         happy_members = 0
@@ -279,18 +231,17 @@ def api_dashboard_stats():
         
         for member in team_members_data:
             if member['mood'] == '😊':
-                total_mood_score += 100
+                total_mood_score += 85  # Senang = 85 (tidak sempurna 100)
                 happy_members += 1
             elif member['mood'] == '😐':
-                total_mood_score += 60
+                total_mood_score += 50  # Netral = 50 (tengah-tengah)
                 neutral_members += 1
             else:
-                total_mood_score += 30
+                total_mood_score += 20  # Sedih = 20 (bukan 0, masih ada harapan)
                 sad_members += 1
             mood_count += 1
         
-        avg_mood = (total_mood_score / mood_count) if mood_count > 0 else 0
-        avg_productivity = sum(member['productivity'] for member in team_members_data) / len(team_members_data) if team_members_data else 0
+        avg_mood = (total_mood_score / mood_count) if mood_count > 0 else 50
         
         # Mood distribution data
         mood_distribution = [
@@ -299,82 +250,6 @@ def api_dashboard_stats():
             {'name': 'Sedih', 'value': sad_members}
         ]
         
-        # Enhanced Productivity calculation
-        productivity_data = []
-        for i in range(7):
-            date = start_date + timedelta(days=i)
-            day_name = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'][date.weekday()]
-            
-            day_start = date.replace(hour=0, minute=0, second=0, microsecond=0)
-            day_end = day_start + timedelta(days=1)
-            
-            # 1. Durasi sesi aktif dalam hari
-            daily_sessions = db.session.query(Session).filter(
-                Session.team_id.in_(team_ids),
-                Session.start_time >= day_start,
-                Session.start_time < day_end
-            ).all() if team_ids else []
-            
-            total_session_duration = 0
-            for session in daily_sessions:
-                if session.end_time:
-                    duration = (session.end_time - session.start_time).total_seconds() / 3600  # in hours
-                    total_session_duration += duration
-                elif session.status == 'active':
-                    # Sesi masih aktif, hitung dari start sampai sekarang
-                    duration = (datetime.now() - session.start_time).total_seconds() / 3600
-                    total_session_duration += min(duration, 8)  # Cap at 8 hours per day
-            
-            # 2. Jumlah unique participants
-            daily_participants = db.session.query(EmotionData.user_id).join(Session).filter(
-                Session.team_id.in_(team_ids),
-                EmotionData.timestamp >= day_start,
-                EmotionData.timestamp < day_end
-            ).distinct().count() if team_ids else 0
-            
-            # 3. Mood positivity ratio
-            daily_emotions = db.session.query(EmotionData).join(Session).filter(
-                Session.team_id.in_(team_ids),
-                EmotionData.timestamp >= day_start,
-                EmotionData.timestamp < day_end
-            ).all() if team_ids else []
-            
-            positive_emotions = sum(1 for e in daily_emotions if e.emotion in ['happy', 'surprise'])
-            total_emotions = len(daily_emotions)
-            mood_ratio = (positive_emotions / total_emotions * 100) if total_emotions > 0 else 50
-            
-            # 4. Participation consistency (how many members participated vs total members)
-            total_team_members = len(team_members_data) if team_members_data else 1
-            participation_rate = (daily_participants / total_team_members * 100) if total_team_members > 0 else 0
-            
-            # Enhanced productivity formula
-            # Factors: Session Duration (40%), Participation Rate (30%), Mood Positivity (20%), Activity Level (10%)
-            duration_score = min(100, (total_session_duration / 4) * 100)  # 4 hours = 100%
-            participation_score = min(100, participation_rate)
-            mood_score = min(100, mood_ratio)
-            activity_score = min(100, (total_emotions / 50) * 100)  # 50 emotions = 100%
-            
-            productivity = (
-                duration_score * 0.4 +
-                participation_score * 0.3 +
-                mood_score * 0.2 +
-                activity_score * 0.1
-            )
-            
-            productivity = max(0, min(100, productivity))  # Ensure 0-100 range
-            
-            productivity_data.append({
-                'name': day_name,
-                'produktivitas': round(productivity),
-                'details': {
-                    'session_duration': round(total_session_duration, 1),
-                    'participants': daily_participants,
-                    'positive_mood_ratio': round(mood_ratio, 1),
-                    'total_emotions': total_emotions,
-                    'sessions_count': len(daily_sessions)
-                }
-            })
-        
         return jsonify({
             'success': True,
             'data': {
@@ -382,13 +257,11 @@ def api_dashboard_stats():
                     'total_teams': total_teams,
                     'total_members': total_members,
                     'active_sessions': active_sessions,
-                    'avg_mood': round(avg_mood),
-                    'avg_productivity': round(avg_productivity)
+                    'avg_mood': round(avg_mood)
                 },
                 'emotion_trend': emotion_stats,
                 'team_members': team_members_data,
-                'mood_distribution': mood_distribution,
-                'productivity_trend': productivity_data
+                'mood_distribution': mood_distribution
             }
         })
         
@@ -571,10 +444,11 @@ def create_session(team_id):
     try:
         data = request.get_json()
         creator_id = data.get('creator_id')
-        title = data.get('name')  # Frontend mengirim 'name', kita simpan ke 'title'
+        title = data.get('title') or data.get('name')  # Terima baik 'title' maupun 'name'
+        description = data.get('description')
         
         if not creator_id or not title:
-            return jsonify({'error': 'creator_id dan name harus diisi'}), 400
+            return jsonify({'error': 'creator_id dan title harus diisi'}), 400
         
         # Cek apakah tim exists
         team = Team.query.get(team_id)
@@ -590,7 +464,8 @@ def create_session(team_id):
         new_session = Session(
             team_id=team_id,
             creator_id=creator_id,
-            title=title,  # Gunakan kolom yang benar
+            title=title,
+            description=description,
             status='active'
         )
         
@@ -602,9 +477,10 @@ def create_session(team_id):
             'message': 'Sesi berhasil dibuat',
             'session': {
                 'id': new_session.id,
-                'title': new_session.title,  # Return title
+                'title': new_session.title,
+                'description': new_session.description,
                 'status': new_session.status,
-                'start_time': new_session.start_time.isoformat()  # Gunakan kolom yang benar
+                'start_time': new_session.start_time.isoformat()
             }
         }), 201
         
@@ -1169,6 +1045,12 @@ def api_monthly_report():
             Session.start_time <= end_of_month
         ).count() if team_ids else 0
         
+        # Sesi aktif (yang sedang berjalan saat ini)
+        current_active_sessions = db.session.query(Session).filter(
+            Session.team_id.in_(team_ids),
+            Session.status == 'active'
+        ).count() if team_ids else 0
+        
         # Data emosi bulan ini
         monthly_emotions = db.session.query(EmotionData).join(Session).filter(
             Session.team_id.in_(team_ids),
@@ -1312,7 +1194,21 @@ def api_monthly_report():
             negative_emotions = emotion_counts['sad'] + emotion_counts['angry'] + emotion_counts['fear'] + emotion_counts['disgust']
             neutral_emotions = emotion_counts['neutral']
             
-            mood_score = ((positive_emotions * 2 + neutral_emotions) / total_emotions) * 100
+            # Rumus mood score yang lebih realistis:
+            # Positif = +1 point, Netral = 0.5 point, Negatif = 0 point
+            # Kemudian dinormalisasi ke skala 0-100
+            positive_score = positive_emotions * 1.0
+            neutral_score = neutral_emotions * 0.5
+            negative_score = negative_emotions * 0.0
+            
+            total_score = positive_score + neutral_score + negative_score
+            max_possible_score = total_emotions * 1.0  # Jika semua emosi positif
+            
+            if max_possible_score > 0:
+                mood_score = (total_score / max_possible_score) * 100
+            else:
+                mood_score = 50
+                
             mood_score = max(0, min(100, mood_score))  # Ensure 0-100 range
         
         # Generate emotion trend data (weekly data for the month)
@@ -1400,7 +1296,8 @@ def api_monthly_report():
                 'summary': {
                     'total_teams': total_teams,
                     'total_members': total_members,
-                    'active_sessions': monthly_sessions,
+                    'monthly_sessions': monthly_sessions,  # Total sesi bulan ini
+                    'active_sessions': current_active_sessions,  # Sesi yang sedang berjalan
                     'avg_mood_score': round(mood_score),
                     'dominant_emotion': dominant_emotion,
                     'total_emotions': total_emotions,
