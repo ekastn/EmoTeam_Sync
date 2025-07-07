@@ -89,7 +89,7 @@ const RiwayatPage = () => {
       } else {
         alert(data.error || "Gagal menghapus sesi");
       }
-    } catch (error) {
+    } catch  {
       alert("Gagal koneksi ke server");
     }
   };
