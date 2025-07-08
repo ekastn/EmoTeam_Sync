@@ -63,12 +63,6 @@ const RegisterPage = () => {
             <span className="text-2xl">🎭</span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">EmoTeam</h1>
-          <p className="text-lg text-gray-600 mb-1">
-            Monitoring Emosi Tim Real-Time
-          </p>
-          <p className="text-sm text-gray-500">
-            Daftar untuk bergabung dalam kolaborasi tim
-          </p>
         </div>
 
         {/* Form Card */}
@@ -239,29 +233,6 @@ const RegisterPage = () => {
                   onChange={handleChange}
                 />
               </div>
-            </div>
-
-            {/* Terms and Conditions */}
-            <div className="flex items-center">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                required
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label
-                htmlFor="terms"
-                className="ml-2 block text-sm text-gray-700"
-              >
-                Saya menyetujui{" "}
-                <a
-                  href="#"
-                  className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  Syarat dan Ketentuan
-                </a>
-              </label>
             </div>
 
             {/* Submit Button */}
