@@ -39,7 +39,7 @@ export default function EmotionPieChart({ data = [] }) {
   });
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="w-full flex flex-col items-center print:break-inside-avoid">
       <ResponsiveContainer width="100%" height={260}>
         <PieChart>
           <Pie
@@ -61,12 +61,14 @@ export default function EmotionPieChart({ data = [] }) {
         </PieChart>
       </ResponsiveContainer>
       {dominant && dominant.value > 0 && (
-        <div className="mt-4 text-center">
-          <div className="text-lg font-semibold">
+        <div className="mt-4 text-center print:mt-2">
+          <div className="text-lg font-semibold print:text-xl print:font-bold print:text-black">
             Selama sesi, emosi dominan:{" "}
-            <span className="font-bold">{dominant.name}</span>
+            <span className="font-bold print:font-extrabold">
+              {dominant.name}
+            </span>
           </div>
-          <div className="text-gray-500 text-sm">
+          <div className="text-gray-500 text-sm print:text-black print:font-medium print:text-base">
             (Total {dominant.value} dari {data.length} deteksi)
           </div>
         </div>

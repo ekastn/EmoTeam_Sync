@@ -62,7 +62,7 @@ const RegisterPage = () => {
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
             <span className="text-2xl">🎭</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">EmoTeam</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">EmoTeam</h1>
         </div>
 
         {/* Form Card */}

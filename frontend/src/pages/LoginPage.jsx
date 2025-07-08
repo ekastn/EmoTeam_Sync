@@ -57,18 +57,18 @@ const LoginPage = () => {
         {/* Header dengan branding yang jelas */}
         <div className="text-center mb-8">
           <div className="mx-auto h-16 w-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
-            <span className="text-2xl">🎭</span>
+            <span className="text-3xl">🎭</span>
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">EmoTeam</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">EmoTeam</h1>
         </div>
 
         {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-gray-900 text-center mb-2">
+            <h2 className="text-3xl font-semibold text-gray-900 text-center mb-2">
               Masuk ke Akun Anda
             </h2>
-            <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-base text-gray-600">
               Belum punya akun?{" "}
               <Link
                 to="/register"

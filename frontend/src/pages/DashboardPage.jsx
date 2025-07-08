@@ -114,17 +114,17 @@ const DashboardPage = () => {
     dashboardData;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 print:p-4 print:space-y-4 print:bg-white">
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center print:flex-col print:items-start print:mb-6">
         <div>
           {currentUser && (
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2 print:text-3xl print:text-black print:font-extrabold print:mb-3">
               👋 Selamat datang kembali, {currentUser.nama}!
             </h1>
           )}
 
-          <p className="text-gray-500">
+          <p className="text-lg font-semibold text-gray-700 print:text-xl print:font-bold">
             {currentTime.toLocaleDateString("id-ID", {
               weekday: "long",
               year: "numeric",
@@ -135,7 +135,7 @@ const DashboardPage = () => {
             {currentTime.toLocaleTimeString("id-ID")}
           </p>
         </div>
-        <div className="mt-4 md:mt-0">
+        <div className="mt-4 md:mt-0 print:hidden">
           <button
             onClick={fetchDashboardData}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
@@ -146,7 +146,7 @@ const DashboardPage = () => {
       </div>
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 print:gap-4 print:mb-6">
         <StatCard
           title="Tim Saya"
           value={stats.total_teams}
@@ -172,7 +172,7 @@ const DashboardPage = () => {
             stats.avg_mood >= 75
               ? "😊"
               : stats.avg_mood >= 60
-              ? "�"
+              ? "🙂"
               : stats.avg_mood >= 40
               ? "😐"
               : stats.avg_mood >= 25
@@ -205,9 +205,11 @@ const DashboardPage = () => {
       </div>
 
       {/* Grafik Tren Emosi - Full Width */}
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="text-lg font-semibold mb-4">Tren Emosi Mingguan</h2>
-        <div className="h-80">
+      <div className="bg-white p-6 rounded-xl shadow print:shadow-none print:border-2 print:border-gray-800 print:p-4">
+        <h2 className="text-xl font-bold mb-4 print:text-2xl print:font-bold print:text-black print:mb-3">
+          📈 Tren Emosi Mingguan
+        </h2>
+        <div className="h-80 print:h-64">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={emotion_trend}
@@ -251,40 +253,46 @@ const DashboardPage = () => {
       </div>
 
       {/* Aktivitas Anggota dan Distribusi Mood */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Aktivitas Anggota</h2>
-          <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:gap-4">
+        <div className="bg-white p-6 rounded-xl shadow print:shadow-none print:border-2 print:border-gray-800 print:p-4">
+          <h2 className="text-xl font-bold mb-4 print:text-2xl print:font-bold print:text-black print:mb-3">
+            👥 Aktivitas Anggota
+          </h2>
+          <div className="space-y-4 print:space-y-3">
             {team_members && team_members.length > 0 ? (
               team_members.map((member, index) => (
                 <div
                   key={`team-member-${member.id}-${index}`}
-                  className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="flex items-center p-3 hover:bg-gray-50 rounded-lg transition-colors print:hover:bg-white print:border print:border-gray-300"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-xl mr-4">
+                  <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-2xl mr-4 print:bg-gray-100">
                     {member.mood}
                   </div>
                   <div className="flex-1">
                     <div className="flex justify-between items-center">
-                      <h3 className="font-medium">{member.name}</h3>
+                      <h3 className="font-bold text-lg print:font-bold print:text-black">
+                        {member.name}
+                      </h3>
                       <span
-                        className={`text-sm px-2 py-1 rounded-full ${
+                        className={`text-base font-semibold px-3 py-1 rounded-full print:font-semibold print:text-black ${
                           member.is_online
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-600"
+                            ? "bg-green-100 text-green-800 print:bg-green-200"
+                            : "bg-gray-100 text-gray-600 print:bg-gray-200"
                         }`}
                       >
                         {member.is_online ? "Online" : "Offline"}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-500">{member.team}</p>
+                    <p className="text-base font-semibold text-gray-700 mt-1 print:text-black print:font-medium">
+                      {member.team}
+                    </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center text-gray-500 py-8">
-                <p>Belum ada anggota tim</p>
-                <p className="text-sm mt-2">
+              <div className="text-center text-gray-600 py-8 print:text-black print:font-medium">
+                <p className="text-lg font-bold">Belum ada anggota tim</p>
+                <p className="text-base mt-2 font-medium">
                   Buat atau bergabung dengan tim untuk melihat aktivitas anggota
                 </p>
               </div>
@@ -292,13 +300,15 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl shadow">
-          <h2 className="text-lg font-semibold mb-4">Distribusi Mood</h2>
-          <div className="h-80 flex flex-col items-center justify-center">
+        <div className="bg-white p-6 rounded-xl shadow print:shadow-none print:border-2 print:border-gray-800 print:p-4">
+          <h2 className="text-xl font-bold mb-4 print:text-2xl print:font-bold print:text-black print:mb-3">
+            📊 Distribusi Mood
+          </h2>
+          <div className="h-80 flex flex-col items-center justify-center print:h-64">
             {mood_distribution.reduce((sum, item) => sum + item.value, 0) >
             0 ? (
               <>
-                <div className="h-52 w-full mb-4">
+                <div className="h-52 w-full mb-4 print:h-40 print:mb-3">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Pie
@@ -336,7 +346,7 @@ const DashboardPage = () => {
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="flex flex-wrap justify-center gap-3 text-xs">
+                <div className="flex flex-wrap justify-center gap-4 text-base font-semibold print:text-lg print:gap-3">
                   {mood_distribution.map((item, index) => {
                     const total = mood_distribution.reduce(
                       (sum, mood) => sum + mood.value,
@@ -347,15 +357,15 @@ const DashboardPage = () => {
                     return (
                       <div
                         key={`mood-legend-${item.name}-${index}`}
-                        className="flex items-center"
+                        className="flex items-center print:font-semibold"
                       >
                         <div
-                          className="w-3 h-3 rounded-full mr-2"
+                          className="w-4 h-4 rounded-full mr-3 print:w-5 print:h-5"
                           style={{
                             backgroundColor: COLORS[index % COLORS.length],
                           }}
                         />
-                        <span className="text-gray-600">
+                        <span className="text-gray-800 font-bold print:text-black">
                           {item.name}: {item.value} orang ({percentage}%)
                         </span>
                       </div>
@@ -364,9 +374,11 @@ const DashboardPage = () => {
                 </div>
               </>
             ) : (
-              <div className="text-center text-gray-500">
-                <p>Belum ada data mood tersedia</p>
-                <p className="text-sm mt-2">
+              <div className="text-center text-gray-600 py-8 print:text-black print:font-medium">
+                <p className="text-lg font-bold">
+                  Belum ada data mood tersedia
+                </p>
+                <p className="text-base mt-2 font-medium">
                   Mulai sesi untuk melihat data mood tim
                 </p>
               </div>
@@ -381,23 +393,34 @@ const DashboardPage = () => {
 // Komponen Stat Card
 const StatCard = ({ title, value, change, icon, color }) => {
   const colorClasses = {
-    blue: "bg-blue-100 text-blue-600",
-    green: "bg-green-100 text-green-600",
-    red: "bg-red-100 text-red-600",
-    yellow: "bg-yellow-100 text-yellow-600",
-    purple: "bg-purple-100 text-purple-600",
+    blue: "bg-blue-100 text-blue-600 print:bg-blue-200 print:text-blue-800",
+    green:
+      "bg-green-100 text-green-600 print:bg-green-200 print:text-green-800",
+    red: "bg-red-100 text-red-600 print:bg-red-200 print:text-red-800",
+    yellow:
+      "bg-yellow-100 text-yellow-600 print:bg-yellow-200 print:text-yellow-800",
+    purple:
+      "bg-purple-100 text-purple-600 print:bg-purple-200 print:text-purple-800",
+    indigo:
+      "bg-indigo-100 text-indigo-600 print:bg-indigo-200 print:text-indigo-800",
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow">
+    <div className="bg-white p-6 rounded-xl shadow print:shadow-none print:border-2 print:border-gray-800 print:p-4">
       <div className="flex justify-between items-start">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
-          <p className="text-xs text-gray-500 mt-1">{change}</p>
+          <p className="text-lg font-bold text-gray-700 print:text-xl print:font-bold print:text-black">
+            {title}
+          </p>
+          <p className="text-4xl font-bold mt-2 print:text-5xl print:text-black">
+            {value}
+          </p>
+          <p className="text-base font-semibold text-gray-700 mt-2 print:text-lg print:font-semibold print:text-gray-800">
+            {change}
+          </p>
         </div>
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-          <span className="text-xl">{icon}</span>
+        <div className={`p-3 rounded-lg ${colorClasses[color]} print:p-2`}>
+          <span className="text-3xl print:text-4xl">{icon}</span>
         </div>
       </div>
     </div>

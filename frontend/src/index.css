@@ -18,6 +18,73 @@
   animation: fadeIn 0.3s ease-out;
 }
 
+/* Print styles for better visibility */
+@media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 14px !important;
+  }
+
+  /* Ensure chart colors print correctly */
+  .recharts-surface {
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide scrollbars and other interactive elements */
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Improve text contrast */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: black !important;
+    font-weight: bold !important;
+  }
+
+  /* Better border visibility */
+  .print\\:border-2 {
+    border-width: 2px !important;
+    border-color: #1f2937 !important;
+  }
+
+  .print\\:border-gray-800 {
+    border-color: #1f2937 !important;
+  }
+
+  /* Ensure backgrounds print */
+  .print\\:bg-white {
+    background-color: white !important;
+  }
+
+  /* Better spacing for print */
+  .print\\:space-y-4 > * + * {
+    margin-top: 1rem !important;
+  }
+
+  .print\\:space-y-3 > * + * {
+    margin-top: 0.75rem !important;
+  }
+
+  .print\\:gap-4 {
+    gap: 1rem !important;
+  }
+
+  .print\\:gap-2 {
+    gap: 0.5rem !important;
+  }
+}
+
 :root {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
   line-height: 1.5;
@@ -27,6 +94,80 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  font-size: 16px; /* Base font size diperbesar */
+}
+
+/* Global font size improvements */
+body {
+  font-size: 16px !important;
+}
+
+/* Perbesar font untuk berbagai elemen */
+h1 {
+  font-size: 2rem !important;
+}
+h2 {
+  font-size: 1.75rem !important;
+}
+h3 {
+  font-size: 1.5rem !important;
+}
+h4 {
+  font-size: 1.25rem !important;
+}
+h5 {
+  font-size: 1.125rem !important;
+}
+h6 {
+  font-size: 1rem !important;
+}
+
+/* Form elements */
+input,
+textarea,
+select {
+  font-size: 16px !important;
+}
+
+/* Button elements */
+button {
+  font-size: 16px !important;
+}
+
+/* Table elements */
+table,
+th,
+td {
+  font-size: 16px !important;
+}
+
+/* Labels dan text kecil */
+.text-xs {
+  font-size: 0.875rem !important;
+}
+.text-sm {
+  font-size: 1rem !important;
+}
+.text-base {
+  font-size: 1.125rem !important;
+}
+.text-lg {
+  font-size: 1.25rem !important;
+}
+.text-xl {
+  font-size: 1.5rem !important;
+}
+.text-2xl {
+  font-size: 1.75rem !important;
+}
+.text-3xl {
+  font-size: 2rem !important;
+}
+.text-4xl {
+  font-size: 2.5rem !important;
+}
+.text-5xl {
+  font-size: 3rem !important;
 }
 
 body {

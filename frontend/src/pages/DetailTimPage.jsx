@@ -313,7 +313,7 @@ function DetailTimPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Memuat detail tim...</p>
+          <p className="text-gray-600 text-lg">Memuat detail tim...</p>
         </div>
       </div>
     );
@@ -324,8 +324,8 @@ function DetailTimPage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">❌</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Error</h2>
-          <p className="text-gray-600 mb-4">{error}</p>
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Error</h2>
+          <p className="text-gray-600 mb-4 text-lg">{error}</p>
           <button
             onClick={() => navigate("/tim")}
             className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -383,10 +383,10 @@ function DetailTimPage() {
                 </svg>
               </button>
               <div>
-                <h1 className="text-3xl font-bold text-gray-800 mb-2">
+                <h1 className="text-4xl font-bold text-gray-800 mb-2">
                   {tim.name}
                 </h1>
-                <p className="text-gray-600">
+                <p className="text-gray-600 text-lg">
                   Kode:{" "}
                   <span className="font-mono bg-gray-100 px-2 py-1 rounded">
                     {tim.code}
@@ -394,7 +394,7 @@ function DetailTimPage() {
                 </p>
                 {isKetuaTim() ? (
                   <div className="mt-2">
-                    <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full font-semibold border border-yellow-200">
+                    <span className="px-3 py-1 bg-yellow-100 text-yellow-800 text-base rounded-full font-semibold border border-yellow-200">
                       👑 Anda Ketua Tim
                     </span>
                   </div>
@@ -490,7 +490,7 @@ function DetailTimPage() {
           <div className="w-full">
             <div className="bg-white rounded-2xl shadow-xl p-6 border border-gray-200">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">
+                <h2 className="text-3xl font-bold text-gray-800">
                   Anggota Tim ({tim.members ? tim.members.length : 0})
                 </h2>
               </div>
@@ -514,10 +514,10 @@ function DetailTimPage() {
                               : "?"}
                           </div>
                           <div className="flex-1">
-                            <p className="font-semibold text-gray-800 text-lg">
+                            <p className="font-semibold text-gray-800 text-xl">
                               {member.name || member.nama}
                             </p>
-                            <p className="text-gray-600 text-sm">
+                            <p className="text-gray-600 text-base">
                               {member.email}
                             </p>
 
@@ -526,7 +526,7 @@ function DetailTimPage() {
                               member.is_ketua === 1 ||
                               member.is_moderator === 1) && (
                               <div className="mt-1">
-                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full font-semibold border border-yellow-200">
+                                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-sm rounded-full font-semibold border border-yellow-200">
                                   Ketua Tim
                                 </span>
                               </div>
@@ -535,7 +535,7 @@ function DetailTimPage() {
                             {/* Emosi saat sesi aktif */}
                             {sesiAktif && (
                               <div className="mt-2">
-                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
+                                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
                                   😊 {member.emotion_current || "neutral"}
                                 </span>
                               </div>
@@ -547,7 +547,7 @@ function DetailTimPage() {
                         <div className="flex items-center space-x-3">
                           {/* Status Online/Offline */}
                           <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium ${
                               member.status === "online"
                                 ? "bg-green-100 text-green-800 border border-green-200"
                                 : "bg-gray-100 text-gray-600 border border-gray-200"

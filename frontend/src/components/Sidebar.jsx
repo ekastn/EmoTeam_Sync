@@ -107,7 +107,7 @@ const Sidebar = () => {
   return (
     <div className="w-72 bg-white shadow-lg flex flex-col h-screen fixed top-0 left-0 z-30">
       <div className="p-4 border-b flex items-center justify-between">
-        <h1 className="text-xl font-bold text-blue-600">EmoTeam Sync</h1>
+        <h1 className="text-2xl font-bold text-blue-600">EmoTeam Sync</h1>
         {/* Bell notification */}
         <div
           className="relative cursor-pointer ml-2"
@@ -116,7 +116,7 @@ const Sidebar = () => {
         >
           <FaBell className="text-2xl text-gray-500 hover:text-blue-600" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5">
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-sm rounded-full px-2 py-1">
               {unreadCount}
             </span>
           )}
@@ -135,20 +135,20 @@ const Sidebar = () => {
           >
             <div className="p-2 font-semibold border-b">Notifikasi</div>
             {notifications.length === 0 ? (
-              <div className="p-4 text-gray-400 text-sm">
+              <div className="p-4 text-gray-400 text-base">
                 Tidak ada notifikasi
               </div>
             ) : (
               notifications.map((notif) => (
                 <div
                   key={notif.id}
-                  className={`p-3 border-b last:border-b-0 text-sm hover:bg-blue-50 cursor-pointer ${
+                  className={`p-3 border-b last:border-b-0 text-base hover:bg-blue-50 cursor-pointer ${
                     notif.is_read ? "" : "bg-blue-50"
                   }`}
                   onClick={() => handleNotifClick(notif.id)}
                 >
                   <div>{notif.message}</div>
-                  <div className="text-xs text-gray-400 mt-1">
+                  <div className="text-sm text-gray-400 mt-1">
                     {new Date(notif.created_at).toLocaleString()}
                   </div>
                 </div>
@@ -160,38 +160,38 @@ const Sidebar = () => {
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         <Link
           to="/dashboard"
-          className={`flex items-center p-3 rounded-lg transition-colors font-medium ${isActive(
+          className={`flex items-center p-3 rounded-lg transition-colors font-medium text-base ${isActive(
             "/dashboard"
           )} hover:bg-blue-50`}
         >
-          <FaHome className="mr-3" />
+          <FaHome className="mr-3 text-lg" />
           <span>Dashboard</span>
         </Link>
         <Link
           to="/tim"
-          className={`flex items-center p-3 rounded-lg transition-colors font-medium ${isActive(
+          className={`flex items-center p-3 rounded-lg transition-colors font-medium text-base ${isActive(
             "/tim"
           )} hover:bg-blue-50`}
         >
-          <FaUsers className="mr-3" />
+          <FaUsers className="mr-3 text-lg" />
           <span>Tim</span>
         </Link>
         <Link
           to="/riwayat"
-          className={`flex items-center p-3 rounded-lg transition-colors font-medium ${isActive(
+          className={`flex items-center p-3 rounded-lg transition-colors font-medium text-base ${isActive(
             "/riwayat"
           )} hover:bg-blue-50`}
         >
-          <FaHistory className="mr-3" />
+          <FaHistory className="mr-3 text-lg" />
           <span>Riwayat</span>
         </Link>
         <Link
           to="/laporan"
-          className={`flex items-center p-3 rounded-lg transition-colors font-medium ${isActive(
+          className={`flex items-center p-3 rounded-lg transition-colors font-medium text-base ${isActive(
             "/laporan"
           )} hover:bg-blue-50`}
         >
-          <FaChartBar className="mr-3" />
+          <FaChartBar className="mr-3 text-lg" />
           <span>Laporan</span>
         </Link>
       </nav>
@@ -202,19 +202,19 @@ const Sidebar = () => {
             {getInitials(user.nama)}
           </div>
           <div className="flex flex-col">
-            <span className="font-semibold text-gray-800 leading-tight">
+            <span className="font-semibold text-gray-800 leading-tight text-base">
               {user.nama}
             </span>
-            <span className="text-xs text-gray-500">{user.email}</span>
+            <span className="text-sm text-gray-500">{user.email}</span>
           </div>
         </div>
       )}
       <div className="p-4 border-t bg-white">
         <button
           onClick={handleLogout}
-          className="flex items-center w-full p-3 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+          className="flex items-center w-full p-3 text-red-600 rounded-lg hover:bg-red-50 transition-colors text-base font-medium"
         >
-          <FaSignOutAlt className="mr-3" />
+          <FaSignOutAlt className="mr-3 text-lg" />
           <span>Keluar</span>
         </button>
       </div>

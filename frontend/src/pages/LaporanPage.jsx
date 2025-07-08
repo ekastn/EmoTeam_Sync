@@ -258,7 +258,7 @@ const LaporanPage = () => {
         <div className="flex items-center justify-center h-64">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Memuat data laporan...</p>
+            <p className="text-gray-600 text-lg">Memuat data laporan...</p>
           </div>
         </div>
       </div>
@@ -272,13 +272,13 @@ const LaporanPage = () => {
           <div className="flex items-center">
             <div className="text-red-600 mr-3">⚠️</div>
             <div>
-              <h3 className="text-red-800 font-medium">Error</h3>
-              <p className="text-red-700 text-sm mt-1">{error}</p>
+              <h3 className="text-red-800 font-medium text-lg">Error</h3>
+              <p className="text-red-700 text-base mt-1">{error}</p>
             </div>
           </div>
           <button
             onClick={fetchReportData}
-            className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors"
+            className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-base hover:bg-red-700 transition-colors"
           >
             Coba Lagi
           </button>
@@ -302,13 +302,13 @@ const LaporanPage = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Laporan Bulanan</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold">Laporan Bulanan</h1>
+          <p className="text-gray-600 mt-1 text-lg">
             {reportData.period.month_name} {reportData.period.year}
           </p>
         </div>
         <button
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-lg font-medium"
           onClick={handleExportPDF}
         >
           <span className="mr-2">📄</span>
@@ -321,14 +321,14 @@ const LaporanPage = () => {
         <div className="lg:col-span-2 space-y-6">
           {/* Summary Cards */}
           <div className="bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-semibold mb-4">Ringkasan Bulan Ini</h2>
+            <h2 className="text-2xl font-semibold mb-4">Ringkasan Bulan Ini</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div
                 key="summary-teams"
                 className="text-center p-4 border rounded-lg"
               >
-                <p className="text-gray-500 text-sm">Total Tim</p>
-                <p className="text-2xl font-bold text-blue-600">
+                <p className="text-gray-500 text-base">Total Tim</p>
+                <p className="text-3xl font-bold text-blue-600">
                   {reportData.summary.total_teams}
                 </p>
               </div>
@@ -336,8 +336,8 @@ const LaporanPage = () => {
                 key="summary-members"
                 className="text-center p-4 border rounded-lg"
               >
-                <p className="text-gray-500 text-sm">Total Anggota</p>
-                <p className="text-2xl font-bold text-green-600">
+                <p className="text-gray-500 text-base">Total Anggota</p>
+                <p className="text-3xl font-bold text-green-600">
                   {reportData.summary.total_members}
                 </p>
               </div>
@@ -345,8 +345,8 @@ const LaporanPage = () => {
                 key="summary-monthly-sessions"
                 className="text-center p-4 border rounded-lg"
               >
-                <p className="text-gray-500 text-sm">Sesi Bulan Ini</p>
-                <p className="text-2xl font-bold text-indigo-600">
+                <p className="text-gray-500 text-base">Sesi Bulan Ini</p>
+                <p className="text-3xl font-bold text-indigo-600">
                   {reportData.summary.monthly_sessions || 0}
                 </p>
               </div>
@@ -354,8 +354,8 @@ const LaporanPage = () => {
                 key="summary-active-sessions"
                 className="text-center p-4 border rounded-lg"
               >
-                <p className="text-gray-500 text-sm">Sesi Aktif</p>
-                <p className="text-2xl font-bold text-purple-600">
+                <p className="text-gray-500 text-base">Sesi Aktif</p>
+                <p className="text-3xl font-bold text-purple-600">
                   {reportData.summary.active_sessions}
                 </p>
               </div>
@@ -363,8 +363,8 @@ const LaporanPage = () => {
                 key="summary-mood"
                 className="text-center p-4 border rounded-lg"
               >
-                <p className="text-gray-500 text-sm">Rata-rata Mood</p>
-                <p className="text-2xl font-bold text-yellow-600">
+                <p className="text-gray-500 text-base">Rata-rata Mood</p>
+                <p className="text-3xl font-bold text-yellow-600">
                   {reportData.summary.avg_mood_score}/100
                 </p>
                 <div className="mt-2 flex flex-col items-center">
@@ -396,8 +396,8 @@ const LaporanPage = () => {
                 key="summary-emotions"
                 className="text-center p-4 border rounded-lg"
               >
-                <p className="text-gray-500 text-sm">Total Deteksi Emosi</p>
-                <p className="text-2xl font-bold text-pink-600">
+                <p className="text-gray-500 text-base">Total Deteksi Emosi</p>
+                <p className="text-3xl font-bold text-pink-600">
                   {reportData.summary.total_emotions}
                 </p>
               </div>

@@ -207,7 +207,7 @@ function TimPage() {
             </h2>
             <button
               onClick={refreshTimData}
-              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-sm"
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors text-base font-medium"
               title="Refresh data tim"
             >
               🔄 Refresh
@@ -307,10 +307,10 @@ function TimPage() {
           {/* Daftar Tim */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 w-full">
             {daftarTim.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 col-span-full">
-                <div className="text-4xl mb-2">👥</div>
-                <p>Belum ada tim</p>
-                <p className="text-sm">
+              <div className="text-center py-8 text-gray-600 col-span-full">
+                <div className="text-5xl mb-4">👥</div>
+                <p className="text-lg font-semibold">Belum ada tim</p>
+                <p className="text-base mt-2">
                   Buat tim baru atau gabung dengan tim yang sudah ada
                 </p>
               </div>

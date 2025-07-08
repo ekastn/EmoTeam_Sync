@@ -30,7 +30,7 @@ const SessionPage = ({ sessionId, isLeader }) => {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-4">Sesi Kolaborasi</h1>
+      <h1 className="text-4xl font-bold mb-6">Sesi Kolaborasi</h1>
       {isLeader && (
         <ToastNotification
           message={toastMsg}
